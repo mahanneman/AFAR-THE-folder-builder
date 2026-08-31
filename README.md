@@ -1,3 +1,6 @@
+![Uploading image.png…]()
+
+Im
 📁 AFAR Ultimate v3.0 – File Architecture & Reverse-engineering Tool
 AFAR (AI-Ready File Architecture & Reverse-engineering) is a powerful cross‑platform desktop application that lets you build complex folder/file structures from a simple text list, reverse‑engineer any existing directory into a clean AI‑ready prompt, and manage your Git/GitHub repositories with a rich graphical interface.
 
