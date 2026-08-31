@@ -47,7 +47,6 @@
 - کتابخانه **requests** (برای اتصال به API گیت‌هاب)
 
 ### نصب وابستگی‌ها
-```bash
 pip install requests
 دریافت و اجرا
 bash
