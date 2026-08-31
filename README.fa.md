@@ -1,5 +1,4 @@
 
-
 [🇬🇧 English](README.md) | [🇮🇷 فارسی](README.fa.md)
 
 # 📁 AFAR Ultimate v3.0 – ابزار معماری فایل و مهندسی معکوس
