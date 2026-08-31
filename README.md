@@ -1,5 +1,5 @@
 
-markdown
+
 [🇬🇧 English](README.md) | [🇮🇷 فارسی](README.fa.md)
 
 # 📁 AFAR Ultimate v3.0 – File Architecture & Reverse-engineering Tool
