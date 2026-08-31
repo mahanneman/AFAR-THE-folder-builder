@@ -1,5 +1,5 @@
 # ============================================================================
-# 0001 - AFAR ULTIMATE v7.0 – Full GitHub Control + Enterprise Git Tools
+# 0001 - AFAR ULTIMATE v3.0 – Full GitHub Control + Enterprise Git Tools
 # ============================================================================
 """
 Author: MA.GH.AD (https://github.com/mahanneman)
@@ -99,7 +99,7 @@ FILE_GROUPS = {
 # ============================================================================
 T = {
     "en": {
-        "title": "⚡ AFAR PRO v7.0 – Build, Reverse & GitHub",
+        "title": "⚡ AFAR PRO v3.0 – Build, Reverse & GitHub",
         "ready": "Ready",
         "tab_build": "📥 Build",
         "tab_reverse": "📤 Reverse",
@@ -270,7 +270,7 @@ README.md
         "git_branch_delete": "Delete Branch"
     },
     "fa": {
-        "title": "⚡ AFAR حرفه‌ای v7.0 – ساخت، معکوس و گیت‌هاب",
+        "title": "⚡ AFAR حرفه‌ای v3.0 – ساخت، معکوس و گیت‌هاب",
         "ready": "آماده",
         "tab_build": "📥 ساخت",
         "tab_reverse": "📤 معکوس",
@@ -1564,14 +1564,7 @@ Input:      ████████████  (Text boxes)
         credit_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=2)
         inner = tk.Frame(credit_frame, bg=self.theme["panel"])
         inner.pack(anchor="center")
-        lbl = tk.Label(inner, text="Developed by", bg=self.theme["panel"],
-                       fg=self.theme["fg"], font=("Segoe UI", 9, "italic"))
-        lbl.pack(side=tk.LEFT, padx=(0, 5))
-        link = tk.Label(inner, text="MA.GH.AD", bg=self.theme["panel"],
-                        fg=self.theme["primary"], font=("Segoe UI", 9, "bold"),
-                        cursor="hand2")
-        link.pack(side=tk.LEFT)
-        link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/mahanneman"))
+  
 
 # ============================================================================
 # 0021 - RUN
