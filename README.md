@@ -2,7 +2,7 @@
 markdown
 [🇬🇧 English](README.md) | [🇮🇷 فارسی](README.fa.md)
 
-# 📁 AFAR Ultimate v7.0 – File Architecture & Reverse-engineering Tool
+# 📁 AFAR Ultimate v3.0 – File Architecture & Reverse-engineering Tool
 
 **AFAR (AI-Ready File Architecture & Reverse-engineering)** is a powerful cross‑platform desktop application that lets you build complex folder/file structures from a simple text list, reverse‑engineer any existing directory into a clean AI‑ready prompt, and manage your Git/GitHub repositories with a rich graphical interface.
 
@@ -128,7 +128,7 @@ Tip: AFAR Ultimate is designed to streamline your file architecture workflow and
 
 ## 📜 Version History
 
-### 🟢 V7 (Current)
+### 🟢 V3 (Current)
 Full-featured version with GitHub integration, file editor, Git commands, and advanced customization.
 
 ### 🔵 V1 (Legacy – Base Version)
