@@ -124,3 +124,15 @@ Developed by MA.GH.AD
 This project is licensed under the MIT License – see the LICENSE file for details.
 
 Tip: AFAR Ultimate is designed to streamline your file architecture workflow and make GitHub management a breeze. Enjoy!
+---
+
+## 📜 Version History
+
+### 🟢 V7 (Current)
+Full-featured version with GitHub integration, file editor, Git commands, and advanced customization.
+
+### 🔵 V1 (Legacy – Base Version)
+The first release of AFAR included only the core **Forward** (build structure from list) and **Reverse** (export folder structure) engines – without GitHub, Git commands, or file editing features.  
+If you need a lightweight, minimalist tool for just building and reversing folder structures, you can still access V1 from the [Releases page](https://github.com/mahanneman/AFAR-Ultimate/releases) or by checking out the `v1.0` tag in the repository.
+
+> **Note:** V1 is no longer under active development, but it remains stable and fully functional for basic use cases.
