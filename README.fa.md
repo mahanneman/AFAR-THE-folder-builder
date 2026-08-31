@@ -49,7 +49,7 @@
 ### نصب وابستگی‌ها
 pip install requests
 دریافت و اجرا
-bash
+
 git clone https://github.com/mahanneman/AFAR-Ultimate.git
 cd AFAR-Ultimate
 python afar_ultimate_v7.py
@@ -107,7 +107,7 @@ git diff
 
 git branch -a
 
-git remote -v
+git remote -v 
 
 🎨 شخصی‌سازی
 زبان – از هدر یا تب تنظیمات بین انگلیسی و فارسی تغییر دهید.
