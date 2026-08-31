@@ -48,7 +48,6 @@
 - **requests** library (for GitHub API calls)
 
 ### Install Dependencies
-```bash
 pip install requests
 Download & Run
 bash
