@@ -1,3 +1,42 @@
+د.
+
+روش دوم: استفاده از --add-data به جای --add-binary
+اگر --collect-all جواب نداد، می‌توانید کل پوشهٔ vosk را به‌عنوان داده اضافه کنید تا فایل DLL در کنار سایر فایل‌ها قرار گیرد:
+
+bash
+python -m PyInstaller --onefile --windowed --add-data "C:\Users\mahan\AppData\Roaming\Python\Python314\site-packages\vosk;vosk" Vosk_SpeechToText_v3.py
+روش سوم (تغییر کد – اگر روش‌های بالا کار نکردند)
+در فایل Vosk_SpeechToText_v3.py، قبل از import vosk، مسیر DLL را به‌صورت دستی به os.add_dll_directory اضافه کنید:
+
+python
+import os
+import sys
+
+# اگر فایل EXE هستیم، مسیر DLL را از کنار EXE بگیریم
+if getattr(sys, 'frozen', False):
+    base_dir = os.path.dirname(sys.executable)
+    dll_path = os.path.join(base_dir, 'libvosk.dll')
+    if os.path.exists(dll_path):
+        os.add_dll_directory(os.path.dirname(dll_path))
+    else:
+        # fallback به مسیر پیش‌فرض
+        pass
+سپس فایل libvosk.dll را به‌صورت دستی در کنار فایل EXE کپی کنید (نه داخل بسته). این روش ساده‌ترین است اما نیاز به کپی دستی DLL دارد.
+
+بعد از ساخت مجدد EXE
+فایل Vosk_SpeechToText_v3.exe جدید در پوشه dist ساخته می‌شود.
+
+حتماً پوشه models (شامل مدل‌های زبان) را در کنار فایل EXE قرار دهید. برنامه از تابع _application_base_dir() استفاده می‌کند که مسیر کنار EXE را بررسی می‌کند.
+
+اگر از روش سوم استفاده کردید، فایل libvosk.dll را نیز کنار EXE کپی کنید.
+
+جمع‌بندی دستور نهایی (پیشنهادی)
+bash
+python -m PyInstaller --onefile --windowed --collect-all vosk Vosk_SpeechToText_v3.py
+این دستور را در پوشه‌ای که فایل Vosk_SpeechToText_v3.py قرار دارد اجرا کنید. پس از اتمام، EXE جدید را تست کنید.
+
+اگر باز هم خطا داشتید، خروجی کامل را بفرستید تا بررسی کنم. موفق باشید! 🚀
+
 
 [🇬🇧 English](README.md) | [🇮🇷 فارسی](README.fa.md)
 
