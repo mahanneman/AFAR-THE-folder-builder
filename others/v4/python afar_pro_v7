@@ -1,0 +1,1538 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+AFAR ULTIMATE v8.0 – Full GitHub Control + Enterprise Git Tools + Code Injector with Preview + Prompt Tab
+Author: MA.GH.AD (https://github.com/mahanneman)
+License: MIT
+Fully fixed & optimized (copy-paste, flexible detection, prompts, GitHub)
+"""
+
+import os
+import re
+import json
+import shutil
+import zipfile
+import subprocess
+import tempfile
+import webbrowser
+import shlex
+from datetime import datetime
+from xml.dom import minidom
+import xml.etree.ElementTree as ET
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk, scrolledtext, colorchooser, simpledialog
+import requests
+
+# ============================================================================
+THEME = {
+    "bg": "#0a0e17",
+    "panel": "#141d2b",
+    "input": "#0d1520",
+    "fg": "#e8edf5",
+    "primary": "#818cf8",
+    "success": "#34d399",
+    "accent": "#f472b6",
+    "warning": "#fbbf24",
+    "danger": "#f87171",
+    "info": "#60a5fa"
+}
+
+# ============================================================================
+PATTERNS_50 = [
+    r"^[├│└└──\s├──]+", r"^[└──\s│]+", r"^[─\s│├└]+", r"^[│\s]+",
+    r"^[\s├└│─]+", r"^\d+\s*[\.\-\)]\s*", r"^\d+\s*[\.\-\)]\s*\d+[\.\-\)]\s*",
+    r"^\d+\s*[\.\-\)]\s*\d+[\.\-\)]\s*\d+[\.\-\)]\s*", r"^[①-⑳]\s*", r"^[❶-❿]\s*",
+    r"^[a-zA-Z][\.\-\)]\s*", r"^[A-Z][\.\-\)]\s*", r"^[a-z][\.\-\)]\s*",
+    r"^[I|V|X|L|C|D|M]+[\.\-\)]\s*", r"^[i|v|x|l|c|d|m]+[\.\-\)]\s*",
+    r"^[•◦▪▫►▶▸▹◆◇◈○●◎◉◊□■▣▤▥▦▧▨▩▪▫▬▭▮▯]\s*",
+    r"^[➤➢➣➤➥➦➧➨➩➪➫➬➭➮➯➰➱➲➳➴➵➶➷➸➹➺➻➼➽➾]\s*",
+    r"^[✧✦✩✪✫✬✭✮✯✰✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿❀❁❂❃❄❅❆❇❈❉❊❋]\s*",
+    r"^[❚❘❙❛❜❝❞❡❢❣❤❥❦❧❨❩❪❫❬❭❮❯❰❱❲❳❴❵]\s*", r"^[➀-➉]\s*",
+    r"^§\s*", r"^¶\s*", r"^©\s*", r"^®\s*", r"^™\s*",
+]
+
+FILE_GROUPS = {
+    "Web & Code": [".php", ".html", ".css", ".js", ".ts", ".json", ".py", ".cpp", ".go", ".rs", ".rb"],
+    "Media": [".mp4", ".mkv", ".avi", ".mp3", ".wav", ".flac", ".ogg", ".aac", ".m4a"],
+    "Documents": [".txt", ".md", ".pdf", ".docx", ".xlsx", ".csv", ".xml", ".yaml", ".toml"],
+    "Graphics": [".png", ".jpg", ".jpeg", ".gif", ".svg", ".psd", ".ai", ".eps", ".webp"],
+    "Container": [".dockerfile", ".k8s.yaml", ".tf", ".nomad"],
+    "Frontend": [".jsx", ".tsx", ".vue", ".svelte"],
+    "All": []
+}
+
+T = {
+    "en": {
+        "title": "⚡ AFAR ULTIMATE v8.0",
+        "ready": "Ready",
+        "tab_build": "📥 Build",
+        "tab_reverse": "📤 Reverse",
+        "tab_github": "🐙 GitHub",
+        "tab_help": "📖 Guide",
+        "tab_export": "💾 Export",
+        "tab_settings": "⚙️ Settings",
+        "tab_code_injector": "📄 Code Injector",
+        "tab_prompt": "💬 Prompt",
+        "dest": "Target Folder",
+        "browse": "Browse",
+        "injectors": "Injectors & Parser",
+        "fallback": "Fallback Extension:",
+        "fallback_tip": "If a file has no extension, this will be added automatically.",
+        "force": "Force Modifier:",
+        "force_tip": "Apply a forced extension to all files, or convert all items to folders.",
+        "readme": "Generate AI Readme",
+        "gitkeep": "Inject .gitkeep",
+        "raw": "1. Paste your tree/list here",
+        "live": "2. Live Editor (edit before deploy)",
+        "parse_btn": "⚡ Parse to Live",
+        "clear_raw": "Clear Raw",
+        "copy": "Copy",
+        "clear_live": "Clear Live",
+        "deploy": "🚀 Deploy Now",
+        "source": "Source Folder (reverse)",
+        "browse_src": "Browse Source",
+        "format": "Output Format & Filters",
+        "style": "Export Style:",
+        "group": "Group Filter:",
+        "ext": "Specific extension:",
+        "meta": "Append Size",
+        "copy_out": "Copy Output",
+        "clear_out": "Clear",
+        "output": "Reverse Output (AI-ready)",
+        "run_rev": "⚡ Run Reverse",
+        "export_title": "💾 Export & Save",
+        "save_as": "Save output as:",
+        "save_btn": "Save to File",
+        "zip_btn": "Create ZIP",
+        "settings_title": "⚙️ Settings",
+        "lang": "Language:",
+        "color_primary": "Primary Color:",
+        "color_success": "Success Color:",
+        "color_accent": "Accent Color:",
+        "color_warning": "Warning Color:",
+        "color_danger": "Danger Color:",
+        "color_info": "Info Color:",
+        "reset_colors": "Reset Colors",
+        "save_settings": "Save Settings",
+        "context_copy": "Copy",
+        "context_cut": "Cut",
+        "context_paste": "Paste",
+        "context_delete": "Delete",
+        "context_select_all": "Select All",
+        "help_title": "📖 Comprehensive Guide",
+        "help_s1": "🔹 BASIC RULES",
+        "help_s2": "🔹 EXAMPLES",
+        "help_s3": "🔹 FORCE MODIFIERS",
+        "help_s4": "🔹 OUTPUT FORMATS",
+        "help_s5": "🔹 QUICK TIPS",
+        "help_text": "1. FOLDER: add slash at end (src/)\n2. FILE: include extension (index.php)\n3. NESTED: use indentation, bullets, or numbers\n4. AUTO-DETECT: <?php → .php, <html → .html\n5. IGNORE: empty lines, comments (#, //, --)",
+        "help_ex": "▶ TREE:\nsrc/\n    controllers/\n        HomeController.php\n    index.php\npublic/\n    css/style.css\nREADME.md",
+        "help_force": "1. Keep Original\n2. Force MP4\n3. Force MP3\n4. Force HTML\n5. Strip Extensions (Folders)",
+        "help_rev": "1. Tree Structure\n2. JSON Map\n3. XML Sheet\n4. Markdown Checklist\n5. Flat Clean List",
+        "help_tips": "• Right-click for context menu\n• Use Preview in Code Injector\n• Customize colors in Settings",
+        "github_token": "GitHub Token:",
+        "token_login": "Login & Save",
+        "token_status": "Status:",
+        "repo_list": "Repositories:",
+        "refresh_repos": "🔄 Refresh",
+        "create_repo": "Create New Repo",
+        "repo_name": "Repo name:",
+        "repo_desc": "Description:",
+        "create_btn": "Create",
+        "local_path": "Local Repo Path:",
+        "browse_local": "Browse",
+        "clone_btn": "Clone",
+        "clone_url": "Clone URL:",
+        "commit_msg": "Commit Message:",
+        "commit_btn": "Commit",
+        "push_btn": "Push",
+        "pull_btn": "Pull",
+        "file_ops": "File Operations",
+        "git_log": "Git Actions Log:",
+        "credit": "Developed by MA.GH.AD",
+        "git_commands": "Git Commands:",
+        "run_command": "Run",
+        "git_status": "Status",
+        "git_branch": "Branches",
+        "github_files": "Repository Files:",
+        "select_all": "Select All",
+        "deselect_all": "Deselect All",
+        "delete_selected": "Delete Selected",
+        "download_selected": "Download Selected",
+        "edit_selected": "Edit Selected",
+        "refresh_files": "Refresh Files",
+        "file_status": "Status",
+        "file_last_commit": "Last Commit",
+        "open_in_explorer": "Open in Explorer",
+        "git_stash": "Stash",
+        "git_stash_pop": "Stash Pop",
+        "git_reset_hard": "Reset Hard",
+        "git_reset_soft": "Reset Soft",
+        "git_revert": "Revert",
+        "git_cherry_pick": "Cherry-pick",
+        "git_rebase": "Rebase",
+        "git_merge": "Merge",
+        "git_fetch": "Fetch",
+        "git_checkout": "Checkout",
+        "git_branch_new": "New Branch",
+        "git_branch_delete": "Delete Branch",
+        "code_injector_title": "📄 File Builder from Code",
+        "tree_structure": "Tree Structure (Folders & Files):",
+        "code_blocks": "Code Blocks (with separators):",
+        "file_detection_mode": "File Path Detection Mode:",
+        "custom_regex": "Custom Regex Pattern:",
+        "generate_files": "🚀 Generate Files",
+        "clear_all": "🗑️ Clear All",
+        "target_folder": "Target Folder:",
+        "browse_target": "Browse",
+        "injector_help": "1. Left side: tree\n2. Right side: code with // file: path\n3. Always use Preview first\n4. Auto Detect supports almost all formats including numbers and custom words",
+        "prompt_title": "💬 AI Prompt Templates",
+        "prompt_lang": "Prompt Language:",
+        "load_prompts": "Load Prompts",
+    },
+    "fa": {
+        "title": "⚡ آفار التیمیت نسخه ۸",
+        "ready": "آماده",
+        "tab_build": "📥 ساخت",
+        "tab_reverse": "📤 معکوس",
+        "tab_github": "🐙 گیت‌هاب",
+        "tab_help": "📖 راهنما",
+        "tab_export": "💾 خروجی",
+        "tab_settings": "⚙️ تنظیمات",
+        "tab_code_injector": "📄 تزریق کد",
+        "tab_prompt": "💬 پرامپت",
+        "dest": "پوشه مقصد",
+        "browse": "مرور",
+        "injectors": "تزریق‌کننده و پردازشگر",
+        "fallback": "پسوند پیش‌فرض:",
+        "fallback_tip": "اگر فایل پسوند نداشته باشد، این پسوند اضافه می‌شود.",
+        "force": "اصلاح‌گر:",
+        "force_tip": "پسوند اجباری یا تبدیل همه به پوشه.",
+        "readme": "تولید Readme هوشمند",
+        "gitkeep": "تزریق .gitkeep",
+        "raw": "۱. درخت/لیست را جای‌گذاری کنید",
+        "live": "۲. ویرایشگر زنده",
+        "parse_btn": "⚡ پردازش به ویرایشگر",
+        "clear_raw": "پاک کردن ورودی",
+        "copy": "کپی",
+        "clear_live": "پاک کردن ویرایشگر",
+        "deploy": "🚀 استقرار",
+        "source": "پوشه مبدأ",
+        "browse_src": "مرور مبدأ",
+        "format": "فرمت خروجی و فیلترها",
+        "style": "سبک خروجی:",
+        "group": "فیلتر گروه:",
+        "ext": "پسوند خاص:",
+        "meta": "افزودن اندازه",
+        "copy_out": "کپی خروجی",
+        "clear_out": "پاک کردن",
+        "output": "خروجی معکوس",
+        "run_rev": "⚡ اجرای معکوس",
+        "export_title": "💾 ذخیره و خروجی",
+        "save_as": "ذخیره خروجی به‌عنوان:",
+        "save_btn": "ذخیره در فایل",
+        "zip_btn": "ایجاد ZIP",
+        "settings_title": "⚙️ تنظیمات",
+        "lang": "زبان:",
+        "color_primary": "رنگ اصلی:",
+        "color_success": "رنگ موفقیت:",
+        "color_accent": "رنگ برجسته:",
+        "color_warning": "رنگ هشدار:",
+        "color_danger": "رنگ خطر:",
+        "color_info": "رنگ اطلاعات:",
+        "reset_colors": "بازنشانی رنگ‌ها",
+        "save_settings": "ذخیره تنظیمات",
+        "context_copy": "کپی",
+        "context_cut": "برش",
+        "context_paste": "چسباندن",
+        "context_delete": "حذف",
+        "context_select_all": "انتخاب همه",
+        "help_title": "📖 راهنمای جامع",
+        "help_s1": "🔹 قوانین پایه",
+        "help_s2": "🔹 نمونه‌ها",
+        "help_s3": "🔹 اصلاح‌گرها",
+        "help_s4": "🔹 فرمت‌های خروجی",
+        "help_s5": "🔹 نکات سریع",
+        "help_text": "۱. پوشه با اسلش تمام شود\n۲. فایل پسوند داشته باشد\n۳. از تورفتگی استفاده کنید",
+        "help_ex": "▶ درختی:\nsrc/\n    index.php",
+        "help_force": "۱. حفظ اصلی\n۲. Force MP4\n۳. Force MP3\n۴. Force HTML\n۵. حذف پسوندها",
+        "help_rev": "۱. درخت\n۲. JSON\n۳. XML\n۴. Markdown\n۵. لیست تخت",
+        "help_tips": "• راست‌کلیک برای منو\n• حتماً Preview بزنید",
+        "github_token": "توکن گیت‌هاب:",
+        "token_login": "ورود و ذخیره",
+        "token_status": "وضعیت:",
+        "repo_list": "مخازن:",
+        "refresh_repos": "🔄 به‌روزرسانی",
+        "create_repo": "ایجاد مخزن جدید",
+        "repo_name": "نام مخزن:",
+        "repo_desc": "توضیحات:",
+        "create_btn": "ایجاد",
+        "local_path": "مسیر محلی مخزن:",
+        "browse_local": "مرور",
+        "clone_btn": "کلون",
+        "clone_url": "آدرس کلون:",
+        "commit_msg": "پیام کامیت:",
+        "commit_btn": "کامیت",
+        "push_btn": "ارسال",
+        "pull_btn": "دریافت",
+        "file_ops": "عملیات فایل",
+        "git_log": "لاگ گیت:",
+        "credit": "تهیه‌شده توسط MA.GH.AD",
+        "git_commands": "دستورات گیت:",
+        "run_command": "اجرا",
+        "git_status": "وضعیت",
+        "git_branch": "شاخه‌ها",
+        "github_files": "فایل‌های مخزن:",
+        "select_all": "انتخاب همه",
+        "deselect_all": "لغو انتخاب",
+        "delete_selected": "حذف انتخاب‌شده‌ها",
+        "download_selected": "دانلود",
+        "edit_selected": "ویرایش",
+        "refresh_files": "به‌روزرسانی",
+        "file_status": "وضعیت",
+        "file_last_commit": "آخرین کامیت",
+        "open_in_explorer": "باز کردن در Explorer",
+        "git_stash": "Stash",
+        "git_stash_pop": "Stash Pop",
+        "git_reset_hard": "Reset Hard",
+        "git_reset_soft": "Reset Soft",
+        "git_revert": "Revert",
+        "git_cherry_pick": "Cherry-pick",
+        "git_rebase": "Rebase",
+        "git_merge": "Merge",
+        "git_fetch": "Fetch",
+        "git_checkout": "Checkout",
+        "git_branch_new": "شاخه جدید",
+        "git_branch_delete": "حذف شاخه",
+        "code_injector_title": "📄 ساخت فایل از کد",
+        "tree_structure": "ساختار درختی:",
+        "code_blocks": "بلوک‌های کد:",
+        "file_detection_mode": "حالت تشخیص مسیر:",
+        "custom_regex": "الگوی رجکس سفارشی:",
+        "generate_files": "🚀 ایجاد فایل‌ها",
+        "clear_all": "🗑️ پاک کردن همه",
+        "target_folder": "پوشه مقصد:",
+        "browse_target": "مرور",
+        "injector_help": "۱. سمت چپ درخت\n۲. سمت راست کد با // file: path\n۳. حتماً Preview بزنید\n۴. Auto Detect تقریباً همه فرمت‌ها را پشتیبانی می‌کند",
+        "prompt_title": "💬 قالب‌های پرامپت",
+        "prompt_lang": "زبان پرامپت:",
+        "load_prompts": "بارگذاری پرامپت‌ها",
+    }
+}
+
+
+def add_context_menu(widget, lang):
+    menu = tk.Menu(widget, tearoff=0)
+    menu.add_command(label=T[lang]["context_copy"], command=lambda: widget.event_generate("<<Copy>>"))
+    menu.add_command(label=T[lang]["context_cut"], command=lambda: widget.event_generate("<<Cut>>"))
+    menu.add_command(label=T[lang]["context_paste"], command=lambda: widget.event_generate("<<Paste>>"))
+    menu.add_separator()
+    menu.add_command(label=T[lang]["context_delete"],
+                     command=lambda: widget.delete("sel.first", "sel.last") if widget.tag_ranges("sel") else None)
+    menu.add_command(label=T[lang]["context_select_all"],
+                     command=lambda: (widget.tag_add("sel", "1.0", "end") if hasattr(widget, "tag_add") else None))
+
+    def do_copy(event=None):
+        try:
+            widget.event_generate("<<Copy>>")
+        except Exception:
+            pass
+        return "break"
+
+    def do_cut(event=None):
+        try:
+            widget.event_generate("<<Cut>>")
+        except Exception:
+            pass
+        return "break"
+
+    def do_paste(event=None):
+        try:
+            widget.event_generate("<<Paste>>")
+        except Exception:
+            pass
+        return "break"
+
+    def do_select_all(event=None):
+        try:
+            if isinstance(widget, (tk.Text, scrolledtext.ScrolledText)):
+                widget.tag_add("sel", "1.0", "end")
+                widget.mark_set("insert", "1.0")
+                widget.see("insert")
+            else:
+                widget.select_range(0, tk.END)
+        except Exception:
+            pass
+        return "break"
+
+    for seq in ("<Control-c>", "<Control-C>", "<Command-c>", "<Control-Insert>"):
+        widget.bind(seq, do_copy)
+    for seq in ("<Control-x>", "<Control-X>", "<Command-x>", "<Shift-Delete>"):
+        widget.bind(seq, do_cut)
+    for seq in ("<Control-v>", "<Control-V>", "<Command-v>", "<Shift-Insert>"):
+        widget.bind(seq, do_paste)
+    for seq in ("<Control-a>", "<Control-A>", "<Command-a>"):
+        widget.bind(seq, do_select_all)
+
+    def show_menu(e):
+        try:
+            widget.focus_set()
+            menu.tk_popup(e.x_root, e.y_root)
+        finally:
+            menu.grab_release()
+        return "break"
+
+    widget.bind("<Button-3>", show_menu)
+    widget.bind("<Control-Button-1>", show_menu)
+    widget.bind("<Button-1>", lambda e: widget.focus_set())
+    return menu
+
+
+def enable_mouse_scroll(widget):
+    def on_mousewheel(event):
+        if event.num == 5 or getattr(event, "delta", 0) < 0:
+            widget.yview_scroll(1, "units")
+        elif event.num == 4 or getattr(event, "delta", 0) > 0:
+            widget.yview_scroll(-1, "units")
+    widget.bind("<MouseWheel>", on_mousewheel)
+    widget.bind("<Button-4>", on_mousewheel)
+    widget.bind("<Button-5>", on_mousewheel)
+    return widget
+
+
+class AFAR:
+    def __init__(self, root):
+        self.root = root
+        self.lang = "en"
+        self.theme = THEME.copy()
+        self.load_config()
+        self.root.title(T[self.lang]["title"])
+        self.root.geometry("1400x860")
+        self.root.minsize(1200, 750)
+        self.root.configure(bg=self.theme["bg"])
+
+        self.target_dir = tk.StringVar()
+        self.reverse_dir = tk.StringVar()
+        self.fallback = tk.StringVar(value="Auto Detect")
+        self.force = tk.StringVar(value="Keep Original")
+        self.style = tk.StringVar(value="Tree Structure")
+        self.group = tk.StringVar(value="All")
+        self.specific_ext = tk.StringVar(value="")
+        self.save_name = tk.StringVar(value="output.txt")
+        self.zip_name = tk.StringVar(value="backup.zip")
+        self.cb_readme = tk.BooleanVar(value=True)
+        self.cb_gitkeep = tk.BooleanVar(value=False)
+        self.cb_meta = tk.BooleanVar(value=True)
+
+        self.github_token = tk.StringVar()
+        self.local_repo_path = tk.StringVar()
+        self.repo_name = tk.StringVar()
+        self.repo_desc = tk.StringVar()
+        self.clone_url = tk.StringVar()
+        self.commit_msg = tk.StringVar(value="Update from AFAR")
+        self.git_custom_command = tk.StringVar(value="git status")
+
+        self.target_dir_injector = tk.StringVar()
+        self.detection_mode = tk.StringVar(value="Auto Detect")
+        self.custom_regex_entry = None
+        self.injector_mode = tk.StringVar(value="Tree + Code (Merge)")
+        self.overwrite_mode = tk.StringVar(value="Ask")
+        self.create_empty_folders = tk.BooleanVar(value=True)
+
+        self.build_ui()
+        self.create_status_bar()
+        self.create_log()
+        self.apply_theme()
+        self.update_status_lang()
+
+    def load_config(self):
+        cfg = os.path.expanduser("~/.afar.json")
+        if os.path.exists(cfg):
+            try:
+                with open(cfg, "r", encoding="utf-8") as f:
+                    d = json.load(f)
+                    self.lang = d.get("lang", "en")
+                    self.theme.update(d.get("theme", THEME))
+                    self.github_token.set(d.get("github_token", ""))
+            except Exception:
+                pass
+
+    def save_config(self):
+        cfg = os.path.expanduser("~/.afar.json")
+        data = {"lang": self.lang, "theme": self.theme, "github_token": self.github_token.get()}
+        with open(cfg, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+    def apply_theme(self):
+        self.root.configure(bg=self.theme["bg"])
+        if hasattr(self, "status_bar"):
+            self.status_bar.config(bg=self.theme["panel"], fg="#94a3b8")
+        if hasattr(self, "txt_log"):
+            self.txt_log.config(bg="#020617", fg=self.theme["warning"])
+        if hasattr(self, "git_log_text"):
+            self.git_log_text.config(bg="#020617", fg=self.theme["info"])
+
+        def rec(w):
+            try:
+                if isinstance(w, (tk.Frame, tk.LabelFrame, tk.PanedWindow)):
+                    w.configure(bg=self.theme["panel"])
+                elif isinstance(w, tk.Label):
+                    w.configure(bg=self.theme["panel"] if w.master != self.root else self.theme["bg"], fg=self.theme["fg"])
+                elif isinstance(w, tk.Entry):
+                    w.configure(bg=self.theme["input"], fg=self.theme["fg"], insertbackground=self.theme["fg"])
+                elif isinstance(w, (tk.Text, scrolledtext.ScrolledText)):
+                    w.configure(bg=self.theme["input"], fg=self.theme["fg"], insertbackground=self.theme["fg"])
+                elif isinstance(w, tk.Listbox):
+                    w.configure(bg=self.theme["input"], fg=self.theme["fg"])
+            except Exception:
+                pass
+            for ch in w.winfo_children():
+                rec(ch)
+        for ch in self.root.winfo_children():
+            rec(ch)
+
+    def build_ui(self):
+        self.hdr = tk.Frame(self.root, bg=self.theme["panel"], height=50)
+        self.hdr.pack(fill=tk.X, side=tk.TOP)
+        self.lbl_title = tk.Label(self.hdr, text=T[self.lang]["title"], bg=self.theme["panel"],
+                                  fg=self.theme["primary"], font=("Segoe UI", 13, "bold"))
+        self.lbl_title.pack(side=tk.LEFT, padx=20, pady=8)
+        self.lbl_credit = tk.Label(self.hdr, text="Developed by MA.GH.AD", bg=self.theme["panel"],
+                                   fg=self.theme["primary"], font=("Segoe UI", 9, "bold"), cursor="hand2")
+        self.lbl_credit.pack(side=tk.LEFT, padx=(10, 0), pady=8)
+        self.lbl_credit.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/mahanneman"))
+
+        self.lang_frame = tk.Frame(self.hdr, bg=self.theme["panel"])
+        self.lang_frame.pack(side=tk.RIGHT, padx=15)
+        tk.Label(self.lang_frame, text="Language:", bg=self.theme["panel"], fg=self.theme["fg"]).pack(side=tk.LEFT, padx=5)
+        self.lang_cb = ttk.Combobox(self.lang_frame, values=["English", "فارسی"], state="readonly", width=10)
+        self.lang_cb.set("English" if self.lang == "en" else "فارسی")
+        self.lang_cb.pack(side=tk.LEFT, padx=5)
+        self.lang_cb.bind("<<ComboboxSelected>>", self.change_lang)
+
+        self.nb = ttk.Notebook(self.root)
+        self.nb.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        tabs = ["build", "reverse", "github", "code_injector", "prompt", "help", "export", "settings"]
+        self.frames = {}
+        for t in tabs:
+            f = tk.Frame(self.nb, bg=self.theme["bg"])
+            self.nb.add(f, text=T[self.lang][f"tab_{t}"])
+            self.frames[t] = f
+
+        self.init_build()
+        self.init_reverse()
+        self.init_github()
+        self.init_code_injector()
+        self.init_prompt()
+        self.init_help()
+        self.init_export()
+        self.init_settings()
+
+    def refresh_ui(self):
+        readme_val = self.cb_readme.get()
+        gitkeep_val = self.cb_gitkeep.get()
+        meta_val = self.cb_meta.get()
+        empty_val = self.create_empty_folders.get()
+        for child in self.root.winfo_children():
+            child.destroy()
+        self.build_ui()
+        self.create_status_bar()
+        self.create_log()
+        self.apply_theme()
+        self.update_status_lang()
+        self.cb_readme.set(readme_val)
+        self.cb_gitkeep.set(gitkeep_val)
+        self.cb_meta.set(meta_val)
+        self.create_empty_folders.set(empty_val)
+
+    # ================= BUILD =================
+    def init_build(self):
+        f = self.frames["build"]
+        p = tk.LabelFrame(f, text=T[self.lang]["dest"], bg=self.theme["panel"], fg=self.theme["primary"],
+                          font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        p.pack(fill=tk.X, padx=12, pady=6, ipady=3)
+        tk.Button(p, text=T[self.lang]["browse"], bg=self.theme["primary"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=12, pady=4, command=self.browse_build).pack(side=tk.RIGHT, padx=10, pady=4)
+        e = tk.Entry(p, textvariable=self.target_dir, bg=self.theme["input"], fg=self.theme["fg"],
+                     font=("Consolas", 10), bd=1, relief=tk.SOLID, insertbackground=self.theme["fg"])
+        e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=4)
+        add_context_menu(e, self.lang)
+
+        mid = tk.Frame(f, bg=self.theme["bg"])
+        mid.pack(fill=tk.BOTH, expand=True, padx=12)
+
+        cfg = tk.LabelFrame(mid, text=T[self.lang]["injectors"], bg=self.theme["panel"], fg=self.theme["primary"],
+                            font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        cfg.pack(side=tk.LEFT, fill=tk.Y, ipadx=10, ipady=8)
+
+        tk.Label(cfg, text=T[self.lang]["fallback"], bg=self.theme["panel"], fg=self.theme["fg"]).pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ttk.Combobox(cfg, textvariable=self.fallback,
+                     values=["Auto Detect", "No Extension (Folder)", ".php", ".html", ".js", ".py", ".json", ".txt", ".md", ".css"],
+                     state="readonly").pack(fill=tk.X, padx=8, pady=4)
+
+        tk.Label(cfg, text=T[self.lang]["force"], bg=self.theme["panel"], fg=self.theme["fg"]).pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ttk.Combobox(cfg, textvariable=self.force,
+                     values=["Keep Original", "Force MP4", "Force MP3", "Force HTML", "Strip Extensions (Folders)"],
+                     state="readonly").pack(fill=tk.X, padx=8, pady=4)
+
+        tk.Checkbutton(cfg, text=T[self.lang]["readme"], variable=self.cb_readme,
+                       bg=self.theme["panel"], fg=self.theme["fg"], selectcolor=self.theme["bg"]).pack(anchor=tk.W, padx=8, pady=2)
+        tk.Checkbutton(cfg, text=T[self.lang]["gitkeep"], variable=self.cb_gitkeep,
+                       bg=self.theme["panel"], fg=self.theme["fg"], selectcolor=self.theme["bg"]).pack(anchor=tk.W, padx=8, pady=2)
+
+        paned = tk.PanedWindow(mid, orient=tk.HORIZONTAL, bg=self.theme["bg"], bd=0, sashwidth=4)
+        paned.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(12, 0))
+
+        left = tk.LabelFrame(paned, text=T[self.lang]["raw"], bg=self.theme["panel"], fg=self.theme["primary"],
+                             font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        self.txt_raw = scrolledtext.ScrolledText(left, bg=self.theme["input"], fg=self.theme["fg"],
+                                                 font=("Consolas", 10), bd=0, insertbackground=self.theme["fg"])
+        self.txt_raw.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        enable_mouse_scroll(self.txt_raw)
+        add_context_menu(self.txt_raw, self.lang)
+        bl = tk.Frame(left, bg=self.theme["panel"])
+        bl.pack(fill=tk.X, padx=4, pady=4)
+        tk.Button(bl, text=T[self.lang]["parse_btn"], bg=self.theme["accent"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=10, pady=3, command=self.parse).pack(side=tk.LEFT, padx=3)
+        tk.Button(bl, text=T[self.lang]["clear_raw"], bg=self.theme["panel"], fg=self.theme["danger"],
+                  font=("Segoe UI", 9), bd=1, padx=10, pady=3, command=lambda: self.txt_raw.delete("1.0", tk.END)).pack(side=tk.LEFT, padx=3)
+
+        right = tk.LabelFrame(paned, text=T[self.lang]["live"], bg=self.theme["panel"], fg=self.theme["warning"],
+                              font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        self.txt_live = scrolledtext.ScrolledText(right, bg=self.theme["input"], fg=self.theme["warning"],
+                                                  font=("Consolas", 10), bd=0, insertbackground=self.theme["fg"])
+        self.txt_live.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        enable_mouse_scroll(self.txt_live)
+        add_context_menu(self.txt_live, self.lang)
+        br = tk.Frame(right, bg=self.theme["panel"])
+        br.pack(fill=tk.X, padx=4, pady=4)
+        tk.Button(br, text=T[self.lang]["copy"], bg=self.theme["panel"], fg=self.theme["fg"],
+                  font=("Segoe UI", 9), bd=1, padx=10, pady=3, command=lambda: self.copy_to_clip(self.txt_live)).pack(side=tk.LEFT, padx=3)
+        tk.Button(br, text=T[self.lang]["clear_live"], bg=self.theme["panel"], fg=self.theme["danger"],
+                  font=("Segoe UI", 9), bd=1, padx=10, pady=3, command=lambda: self.txt_live.delete("1.0", tk.END)).pack(side=tk.LEFT, padx=3)
+
+        paned.add(left, width=450)
+        paned.add(right, width=450)
+
+        tk.Button(f, text=T[self.lang]["deploy"], bg=self.theme["success"], fg=self.theme["bg"],
+                  font=("Segoe UI", 12, "bold"), bd=0, pady=10, command=self.deploy).pack(fill=tk.X, padx=12, pady=10)
+
+    def browse_build(self):
+        d = filedialog.askdirectory()
+        if d:
+            self.target_dir.set(d)
+            self.log("Target: " + d)
+
+    def parse(self):
+        raw = self.txt_raw.get("1.0", tk.END).strip()
+        if not raw:
+            messagebox.showwarning("Warning", "Raw input is empty!")
+            return
+        lines = raw.splitlines()
+        out = []
+        for line in lines:
+            line = re.sub(r"\s*(#|//|--|/\*).*$", "", line)
+            for p in PATTERNS_50:
+                line = re.sub(p, "", line)
+            line = line.strip()
+            if not line:
+                continue
+            if self.fallback.get() == "Auto Detect":
+                ext = self.detect_ext(line)
+                if ext and "." not in line and not line.endswith("/"):
+                    line += ext
+            out.append(line)
+        self.txt_live.delete("1.0", tk.END)
+        self.txt_live.insert(tk.END, "\n".join(out))
+        self.log(f"Parsed {len(out)} items")
+
+    def detect_ext(self, line):
+        known = [".php", ".html", ".js", ".py", ".json", ".txt", ".md", ".css"]
+        for e in known:
+            if line.strip().endswith(e):
+                return e
+        if re.search(r"<\?php", line):
+            return ".php"
+        if re.search(r"<html", line, re.I):
+            return ".html"
+        if re.search(r"def\s+\w+\s*\(", line):
+            return ".py"
+        return None
+
+    def deploy(self):
+        out = self.target_dir.get()
+        if not out:
+            messagebox.showerror("Error", "Target folder not set.")
+            return
+        text = self.txt_live.get("1.0", tk.END).strip()
+        if not text:
+            messagebox.showerror("Error", "Live editor empty.")
+            return
+        lines = text.splitlines()
+        dirs, files = 0, 0
+        for item in lines:
+            item = item.strip()
+            if not item:
+                continue
+            is_dir = item.endswith("/") or item.endswith("\\") or ("." not in item and self.fallback.get() == "No Extension (Folder)")
+            force = self.force.get()
+            if not is_dir and "." not in item:
+                if force == "Keep Original":
+                    fb = self.fallback.get()
+                    if fb not in ["Auto Detect", "No Extension (Folder)"]:
+                        item += fb
+                    else:
+                        is_dir = True
+                elif force == "Force MP4":
+                    item += ".mp4"
+                elif force == "Force MP3":
+                    item += ".mp3"
+                elif force == "Force HTML":
+                    item += ".html"
+                elif force == "Strip Extensions (Folders)":
+                    is_dir = True
+            full = os.path.join(out, item.replace("/", os.sep).replace("\\", os.sep))
+            try:
+                if is_dir:
+                    os.makedirs(full, exist_ok=True)
+                    dirs += 1
+                    if self.cb_gitkeep.get():
+                        open(os.path.join(full, ".gitkeep"), "w").close()
+                else:
+                    os.makedirs(os.path.dirname(full) or full, exist_ok=True)
+                    open(full, "a", encoding="utf-8").close()
+                    files += 1
+            except Exception as e:
+                self.log(f"Error: {item} – {e}")
+        if self.cb_readme.get():
+            try:
+                with open(os.path.join(out, "AI_README.md"), "w", encoding="utf-8") as f:
+                    f.write(f"# AI Structure\n\nDate: {datetime.now()}\nDirs: {dirs}\nFiles: {files}")
+            except Exception:
+                pass
+        self.log(f"Deployed: {dirs} dirs, {files} files")
+        messagebox.showinfo("Done", f"Deployed: {dirs} dirs, {files} files")
+
+    # ================= REVERSE =================
+    def init_reverse(self):
+        f = self.frames["reverse"]
+        p = tk.LabelFrame(f, text=T[self.lang]["source"], bg=self.theme["panel"], fg=self.theme["primary"],
+                          font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        p.pack(fill=tk.X, padx=12, pady=6, ipady=3)
+        tk.Button(p, text=T[self.lang]["browse_src"], bg=self.theme["primary"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=12, pady=4, command=self.browse_reverse).pack(side=tk.RIGHT, padx=10, pady=4)
+        e = tk.Entry(p, textvariable=self.reverse_dir, bg=self.theme["input"], fg=self.theme["fg"],
+                     font=("Consolas", 10), bd=1, relief=tk.SOLID, insertbackground=self.theme["fg"])
+        e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=4)
+        add_context_menu(e, self.lang)
+
+        mid = tk.Frame(f, bg=self.theme["bg"])
+        mid.pack(fill=tk.BOTH, expand=True, padx=12)
+
+        cfg = tk.LabelFrame(mid, text=T[self.lang]["format"], bg=self.theme["panel"], fg=self.theme["primary"],
+                            font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        cfg.pack(side=tk.LEFT, fill=tk.Y, ipadx=10, ipady=8)
+
+        tk.Label(cfg, text=T[self.lang]["style"], bg=self.theme["panel"], fg=self.theme["fg"]).pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ttk.Combobox(cfg, textvariable=self.style,
+                     values=["Tree Structure", "JSON Map", "XML Sheet", "Markdown Checklist", "Flat Clean List"],
+                     state="readonly").pack(fill=tk.X, padx=8, pady=4)
+
+        tk.Label(cfg, text=T[self.lang]["group"], bg=self.theme["panel"], fg=self.theme["fg"]).pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ttk.Combobox(cfg, textvariable=self.group, values=list(FILE_GROUPS.keys()), state="readonly").pack(fill=tk.X, padx=8, pady=4)
+
+        tk.Label(cfg, text=T[self.lang]["ext"], bg=self.theme["panel"], fg=self.theme["fg"]).pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ext_entry = tk.Entry(cfg, textvariable=self.specific_ext, bg=self.theme["input"], fg=self.theme["fg"],
+                             font=("Consolas", 10), bd=1, relief=tk.SOLID, insertbackground=self.theme["fg"])
+        ext_entry.pack(fill=tk.X, padx=8, pady=4)
+        add_context_menu(ext_entry, self.lang)
+
+        tk.Checkbutton(cfg, text=T[self.lang]["meta"], variable=self.cb_meta,
+                       bg=self.theme["panel"], fg=self.theme["fg"], selectcolor=self.theme["bg"]).pack(anchor=tk.W, padx=8, pady=4)
+
+        bf = tk.Frame(cfg, bg=self.theme["panel"])
+        bf.pack(fill=tk.X, padx=8, pady=6)
+        tk.Button(bf, text=T[self.lang]["copy_out"], bg=self.theme["panel"], fg=self.theme["fg"],
+                  font=("Segoe UI", 9), bd=1, padx=10, pady=3, command=lambda: self.copy_to_clip(self.txt_out)).pack(side=tk.LEFT, padx=3)
+        tk.Button(bf, text=T[self.lang]["clear_out"], bg=self.theme["panel"], fg=self.theme["danger"],
+                  font=("Segoe UI", 9), bd=1, padx=10, pady=3, command=lambda: self.txt_out.delete("1.0", tk.END)).pack(side=tk.LEFT, padx=3)
+
+        out_f = tk.LabelFrame(mid, text=T[self.lang]["output"], bg=self.theme["panel"], fg=self.theme["primary"],
+                              font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        out_f.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(12, 0))
+        self.txt_out = scrolledtext.ScrolledText(out_f, bg=self.theme["input"], fg=self.theme["fg"],
+                                                 font=("Consolas", 10), bd=0, insertbackground=self.theme["fg"])
+        self.txt_out.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        enable_mouse_scroll(self.txt_out)
+        add_context_menu(self.txt_out, self.lang)
+
+        tk.Button(f, text=T[self.lang]["run_rev"], bg=self.theme["primary"], fg=self.theme["bg"],
+                  font=("Segoe UI", 12, "bold"), bd=0, pady=10, command=self.run_reverse).pack(fill=tk.X, padx=12, pady=10)
+
+    def browse_reverse(self):
+        d = filedialog.askdirectory()
+        if d:
+            self.reverse_dir.set(d)
+            self.log("Source: " + d)
+
+    def run_reverse(self):
+        src = self.reverse_dir.get()
+        if not src or not os.path.exists(src):
+            messagebox.showerror("Error", "Invalid source folder.")
+            return
+        style = self.style.get()
+        grp = self.group.get()
+        spec = self.specific_ext.get().strip()
+        allowed = FILE_GROUPS.get(grp, []) if grp != "All" else []
+        use_spec = bool(spec)
+        buf = []
+        if style == "Tree Structure":
+            self.gen_tree(src, "", allowed, use_spec, spec, buf)
+            final = "\n".join(buf)
+        elif style == "JSON Map":
+            data = self.gen_dict(src, allowed, use_spec, spec)
+            final = json.dumps(data, indent=4, ensure_ascii=False)
+        elif style == "XML Sheet":
+            root = ET.Element("Structure", Name=os.path.basename(src))
+            self.gen_xml(src, root, allowed, use_spec, spec)
+            final = minidom.parseString(ET.tostring(root)).toprettyxml(indent="  ")
+        elif style == "Markdown Checklist":
+            self.gen_md(src, 0, allowed, use_spec, spec, buf)
+            final = "\n".join(buf)
+        else:
+            self.gen_flat(src, src, allowed, use_spec, spec, buf)
+            final = "\n".join(buf)
+        self.txt_out.delete("1.0", tk.END)
+        self.txt_out.insert(tk.END, final)
+        self.log(f"Reverse output generated")
+
+    def include(self, name, allowed, use_spec, spec):
+        if use_spec:
+            return name.endswith(spec)
+        if allowed:
+            return any(name.endswith(e) for e in allowed)
+        return True
+
+    def gen_tree(self, path, pref, allowed, use_spec, spec, buf):
+        try:
+            items = sorted(os.listdir(path))
+        except Exception:
+            return
+        ptrs = ["├── "] * (len(items) - 1) + ["└── "]
+        for ptr, name in zip(ptrs, items):
+            full = os.path.join(path, name)
+            if os.path.isdir(full):
+                buf.append(f"{pref}{ptr}{name}/")
+                ext = "│   " if ptr == "├── " else "    "
+                self.gen_tree(full, pref + ext, allowed, use_spec, spec, buf)
+            else:
+                if self.include(name, allowed, use_spec, spec):
+                    meta = f" ({os.path.getsize(full)} bytes)" if self.cb_meta.get() else ""
+                    buf.append(f"{pref}{ptr}{name}{meta}")
+
+    def gen_dict(self, path, allowed, use_spec, spec):
+        d = {"name": os.path.basename(path), "type": "dir", "children": []}
+        try:
+            for name in sorted(os.listdir(path)):
+                full = os.path.join(path, name)
+                if os.path.isdir(full):
+                    d["children"].append(self.gen_dict(full, allowed, use_spec, spec))
+                else:
+                    if self.include(name, allowed, use_spec, spec):
+                        item = {"name": name, "type": "file"}
+                        if self.cb_meta.get():
+                            item["size"] = os.path.getsize(full)
+                        d["children"].append(item)
+        except Exception:
+            pass
+        return d
+
+    def gen_xml(self, path, parent, allowed, use_spec, spec):
+        try:
+            for name in sorted(os.listdir(path)):
+                full = os.path.join(path, name)
+                if os.path.isdir(full):
+                    sub = ET.SubElement(parent, "Dir", Name=name)
+                    self.gen_xml(full, sub, allowed, use_spec, spec)
+                else:
+                    if self.include(name, allowed, use_spec, spec):
+                        el = ET.SubElement(parent, "File", Name=name)
+                        if self.cb_meta.get():
+                            el.set("Size", str(os.path.getsize(full)))
+        except Exception:
+            pass
+
+    def gen_md(self, path, level, allowed, use_spec, spec, buf):
+        ind = "  " * level
+        try:
+            for name in sorted(os.listdir(path)):
+                full = os.path.join(path, name)
+                if os.path.isdir(full):
+                    buf.append(f"{ind}- [ ] 📁 {name}")
+                    self.gen_md(full, level + 1, allowed, use_spec, spec, buf)
+                else:
+                    if self.include(name, allowed, use_spec, spec):
+                        buf.append(f"{ind}- [ ] 📄 {name}")
+        except Exception:
+            pass
+
+    def gen_flat(self, base, cur, allowed, use_spec, spec, buf):
+        try:
+            for name in sorted(os.listdir(cur)):
+                full = os.path.join(cur, name)
+                if os.path.isdir(full):
+                    self.gen_flat(base, full, allowed, use_spec, spec, buf)
+                else:
+                    if self.include(name, allowed, use_spec, spec):
+                        buf.append(os.path.relpath(full, base))
+        except Exception:
+            pass
+
+    # ================= GITHUB (simplified but working) =================
+    def init_github(self):
+        f = self.frames["github"]
+        main_canvas = tk.Canvas(f, bg=self.theme["bg"], bd=0, highlightthickness=0)
+        scroll = ttk.Scrollbar(f, orient="vertical", command=main_canvas.yview)
+        inner = tk.Frame(main_canvas, bg=self.theme["bg"])
+        inner.bind("<Configure>", lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all")))
+        main_canvas.create_window((0, 0), window=inner, anchor="nw")
+        main_canvas.configure(yscrollcommand=scroll.set)
+        main_canvas.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+        enable_mouse_scroll(main_canvas)
+
+        token_frame = tk.LabelFrame(inner, text="🔑 GitHub Authentication", bg=self.theme["panel"],
+                                    fg=self.theme["primary"], font=("Segoe UI", 10, "bold"), bd=1, relief=tk.SOLID)
+        token_frame.pack(fill=tk.X, padx=10, pady=8, ipady=5)
+        tk.Label(token_frame, text=T[self.lang]["github_token"], bg=self.theme["panel"], fg=self.theme["fg"]).grid(row=0, column=0, padx=8, pady=5, sticky=tk.W)
+        token_entry = tk.Entry(token_frame, textvariable=self.github_token, bg=self.theme["input"], fg=self.theme["fg"],
+                               font=("Consolas", 10), bd=1, relief=tk.SOLID, width=50, show="*", insertbackground=self.theme["fg"])
+        token_entry.grid(row=0, column=1, padx=8, pady=5, sticky=tk.W)
+        add_context_menu(token_entry, self.lang)
+        tk.Button(token_frame, text=T[self.lang]["token_login"], bg=self.theme["success"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=10, pady=4, command=self.github_login).grid(row=0, column=2, padx=8, pady=5)
+        self.token_status_label = tk.Label(token_frame, text=T[self.lang]["token_status"] + " Not logged in",
+                                           bg=self.theme["panel"], fg=self.theme["danger"], font=("Segoe UI", 9))
+        self.token_status_label.grid(row=1, column=0, columnspan=3, padx=8, pady=2, sticky=tk.W)
+
+        path_frame = tk.LabelFrame(inner, text="📂 Local Repository", bg=self.theme["panel"],
+                                   fg=self.theme["primary"], font=("Segoe UI", 10, "bold"), bd=1, relief=tk.SOLID)
+        path_frame.pack(fill=tk.X, padx=10, pady=8, ipady=5)
+        tk.Label(path_frame, text=T[self.lang]["local_path"], bg=self.theme["panel"], fg=self.theme["fg"]).grid(row=0, column=0, padx=8, pady=5, sticky=tk.W)
+        path_entry = tk.Entry(path_frame, textvariable=self.local_repo_path, bg=self.theme["input"], fg=self.theme["fg"],
+                              font=("Consolas", 10), bd=1, relief=tk.SOLID, width=50, insertbackground=self.theme["fg"])
+        path_entry.grid(row=0, column=1, padx=8, pady=5, sticky=tk.W)
+        add_context_menu(path_entry, self.lang)
+        tk.Button(path_frame, text=T[self.lang]["browse_local"], bg=self.theme["info"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=10, pady=4, command=self.browse_local_repo).grid(row=0, column=2, padx=8, pady=5)
+
+        git_ops = tk.LabelFrame(inner, text="⚡ Git Operations", bg=self.theme["panel"],
+                                fg=self.theme["primary"], font=("Segoe UI", 10, "bold"), bd=1, relief=tk.SOLID)
+        git_ops.pack(fill=tk.X, padx=10, pady=8, ipady=5)
+        tk.Label(git_ops, text=T[self.lang]["commit_msg"], bg=self.theme["panel"], fg=self.theme["fg"]).grid(row=0, column=0, padx=5, pady=3, sticky=tk.W)
+        commit_entry = tk.Entry(git_ops, textvariable=self.commit_msg, bg=self.theme["input"], fg=self.theme["fg"],
+                                font=("Consolas", 10), bd=1, relief=tk.SOLID, width=30, insertbackground=self.theme["fg"])
+        commit_entry.grid(row=0, column=1, padx=5, pady=3, sticky=tk.W)
+        add_context_menu(commit_entry, self.lang)
+        tk.Button(git_ops, text=T[self.lang]["commit_btn"], bg=self.theme["success"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=8, pady=3, command=self.git_commit).grid(row=0, column=2, padx=5, pady=3)
+        tk.Button(git_ops, text=T[self.lang]["push_btn"], bg=self.theme["primary"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=8, pady=3, command=self.git_push).grid(row=0, column=3, padx=5, pady=3)
+        tk.Button(git_ops, text=T[self.lang]["pull_btn"], bg=self.theme["info"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=8, pady=3, command=self.git_pull).grid(row=0, column=4, padx=5, pady=3)
+        tk.Button(git_ops, text=T[self.lang]["git_status"], bg=self.theme["warning"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=8, pady=3, command=self.quick_git_status).grid(row=0, column=5, padx=5, pady=3)
+
+        adv = tk.LabelFrame(inner, text=T[self.lang]["git_commands"], bg=self.theme["panel"],
+                            fg=self.theme["primary"], font=("Segoe UI", 10, "bold"), bd=1, relief=tk.SOLID)
+        adv.pack(fill=tk.X, padx=10, pady=8, ipady=5)
+        tk.Label(adv, text="Custom Command:", bg=self.theme["panel"], fg=self.theme["fg"]).grid(row=0, column=0, padx=8, pady=5, sticky=tk.W)
+        cmd_entry = tk.Entry(adv, textvariable=self.git_custom_command, bg=self.theme["input"], fg=self.theme["fg"],
+                             font=("Consolas", 10), bd=1, relief=tk.SOLID, width=50, insertbackground=self.theme["fg"])
+        cmd_entry.grid(row=0, column=1, padx=8, pady=5, sticky=tk.W)
+        add_context_menu(cmd_entry, self.lang)
+        tk.Button(adv, text=T[self.lang]["run_command"], bg=self.theme["primary"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=10, pady=4, command=self.run_custom_git_command).grid(row=0, column=2, padx=8, pady=5)
+
+        log_frame = tk.LabelFrame(inner, text=T[self.lang]["git_log"], bg=self.theme["panel"],
+                                  fg=self.theme["primary"], font=("Segoe UI", 10, "bold"), bd=1, relief=tk.SOLID)
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=8, ipady=5)
+        self.git_log_text = scrolledtext.ScrolledText(log_frame, bg="#020617", fg=self.theme["info"],
+                                                      font=("Consolas", 9), height=12, bd=0, insertbackground=self.theme["fg"])
+        self.git_log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        enable_mouse_scroll(self.git_log_text)
+        add_context_menu(self.git_log_text, self.lang)
+
+    def github_login(self):
+        token = self.github_token.get().strip()
+        if not token:
+            messagebox.showerror("Error", "Token is required.")
+            return
+        try:
+            resp = requests.get("https://api.github.com/user", headers={"Authorization": f"token {token}"}, timeout=15)
+            if resp.status_code == 200:
+                user = resp.json()
+                self.token_status_label.config(text=T[self.lang]["token_status"] + f" Logged in as {user['login']}", fg=self.theme["success"])
+                self.save_config()
+                self.git_log("Logged in as " + user["login"])
+                messagebox.showinfo("Success", f"Logged in as {user['login']}")
+            else:
+                self.token_status_label.config(text=T[self.lang]["token_status"] + " Login failed", fg=self.theme["danger"])
+                messagebox.showerror("Error", f"Login failed: {resp.status_code}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def browse_local_repo(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.local_repo_path.set(folder)
+            self.git_log(f"Local path: {folder}")
+
+    def run_git_command(self, args, cwd=None):
+        if cwd is None:
+            cwd = self.local_repo_path.get().strip()
+            if not cwd:
+                self.git_log("Error: Local repo path not set.")
+                return None
+        try:
+            result = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True, timeout=60)
+            if result.returncode == 0:
+                self.git_log("> " + " ".join(args) + " → OK")
+                if result.stdout:
+                    self.git_log(result.stdout.strip()[:600])
+                return result.stdout
+            else:
+                self.git_log("> " + " ".join(args) + " → ERROR")
+                if result.stderr:
+                    self.git_log(result.stderr.strip()[:400])
+                return None
+        except Exception as e:
+            self.git_log(f"Exception: {e}")
+            return None
+
+    def git_commit(self):
+        msg = self.commit_msg.get().strip()
+        if not msg:
+            messagebox.showerror("Error", "Commit message required.")
+            return
+        self.run_git_command(["add", "."])
+        res = self.run_git_command(["commit", "-m", msg])
+        messagebox.showinfo("Commit", "Done" if res is not None else "Failed")
+
+    def git_push(self):
+        branch = self.run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
+        if branch:
+            branch = branch.strip()
+            res = self.run_git_command(["push", "-u", "origin", branch])
+            if res is not None:
+                messagebox.showinfo("Push", f"Pushed to {branch}")
+                return
+        for b in ("main", "master"):
+            res = self.run_git_command(["push", "-u", "origin", b])
+            if res is not None:
+                messagebox.showinfo("Push", f"Pushed to {b}")
+                return
+        messagebox.showerror("Error", "Push failed")
+
+    def git_pull(self):
+        res = self.run_git_command(["pull"])
+        messagebox.showinfo("Pull", "Done" if res is not None else "Failed")
+
+    def quick_git_status(self):
+        self.git_custom_command.set("git status")
+        self.run_custom_git_command()
+
+    def run_custom_git_command(self):
+        cmd = self.git_custom_command.get().strip()
+        if not cmd:
+            return
+        try:
+            if cmd.lower().startswith("git "):
+                args = shlex.split(cmd)[1:]
+            else:
+                args = shlex.split(cmd)
+            self.run_git_command(args)
+        except Exception as e:
+            self.git_log(f"Invalid command: {e}")
+
+    def git_log(self, msg):
+        ts = datetime.now().strftime("%H:%M:%S")
+        self.git_log_text.insert(tk.END, f"[{ts}] {msg}\n")
+        self.git_log_text.see(tk.END)
+
+    # ================= CODE INJECTOR =================
+    def init_code_injector(self):
+        f = self.frames["code_injector"]
+        target_frame = tk.LabelFrame(f, text=T[self.lang]["target_folder"], bg=self.theme["panel"],
+                                     fg=self.theme["primary"], font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        target_frame.pack(fill=tk.X, padx=12, pady=6, ipady=3)
+        tk.Button(target_frame, text=T[self.lang]["browse_target"], bg=self.theme["primary"], fg=self.theme["bg"],
+                  font=("Segoe UI", 9, "bold"), bd=0, padx=12, pady=4, command=self.browse_injector_target).pack(side=tk.RIGHT, padx=10, pady=4)
+        tk.Entry(target_frame, textvariable=self.target_dir_injector, bg=self.theme["input"], fg=self.theme["fg"],
+                 font=("Consolas", 10), bd=1, relief=tk.SOLID, insertbackground=self.theme["fg"]).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=4)
+
+        paned = tk.PanedWindow(f, orient=tk.HORIZONTAL, bg=self.theme["bg"], bd=0, sashwidth=5)
+        paned.pack(fill=tk.BOTH, expand=True, padx=12, pady=6)
+
+        left_frame = tk.LabelFrame(paned, text=T[self.lang]["tree_structure"], bg=self.theme["panel"],
+                                   fg=self.theme["primary"], font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        self.txt_tree = scrolledtext.ScrolledText(left_frame, bg=self.theme["input"], fg=self.theme["fg"],
+                                                  font=("Consolas", 10), bd=0, insertbackground=self.theme["fg"])
+        self.txt_tree.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        add_context_menu(self.txt_tree, self.lang)
+        enable_mouse_scroll(self.txt_tree)
+
+        right_frame = tk.LabelFrame(paned, text=T[self.lang]["code_blocks"], bg=self.theme["panel"],
+                                    fg=self.theme["primary"], font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        self.txt_code = scrolledtext.ScrolledText(right_frame, bg=self.theme["input"], fg=self.theme["fg"],
+                                                  font=("Consolas", 10), bd=0, insertbackground=self.theme["fg"])
+        self.txt_code.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        add_context_menu(self.txt_code, self.lang)
+        enable_mouse_scroll(self.txt_code)
+
+        paned.add(left_frame, width=400)
+        paned.add(right_frame, width=600)
+
+        config_frame = tk.Frame(f, bg=self.theme["bg"])
+        config_frame.pack(fill=tk.X, padx=12, pady=6)
+
+        row1 = tk.Frame(config_frame, bg=self.theme["bg"])
+        row1.pack(fill=tk.X, pady=2)
+        tk.Label(row1, text=T[self.lang]["file_detection_mode"] + " ", bg=self.theme["bg"], fg=self.theme["fg"]).pack(side=tk.LEFT)
+        mode_combo = ttk.Combobox(row1, textvariable=self.detection_mode,
+                                  values=["Auto Detect", "Comment: // file: ", "Comment: # file: ", "--- FILE: ---", "Path on its own line", "Custom Regex"],
+                                  state="readonly", width=25)
+        mode_combo.pack(side=tk.LEFT, padx=5)
+        self.custom_regex_entry = tk.Entry(row1, bg=self.theme["input"], fg=self.theme["fg"],
+                                           font=("Consolas", 10), bd=1, relief=tk.SOLID, width=35, insertbackground=self.theme["fg"])
+        self.custom_regex_entry.pack(side=tk.LEFT, padx=5)
+        self.custom_regex_entry.insert(0, r"^.*?[:：]\s*(.+)$")
+        self.custom_regex_entry.config(state="disabled")
+        mode_combo.bind("<<ComboboxSelected>>", self.on_detection_mode_change)
+
+        row2 = tk.Frame(config_frame, bg=self.theme["bg"])
+        row2.pack(fill=tk.X, pady=2)
+        tk.Label(row2, text="Mode: ", bg=self.theme["bg"], fg=self.theme["fg"]).pack(side=tk.LEFT)
+        ttk.Combobox(row2, textvariable=self.injector_mode,
+                     values=["Tree + Code (Merge)", "Tree Only", "Code Only"],
+                     state="readonly", width=20).pack(side=tk.LEFT, padx=5)
+        tk.Label(row2, text="Overwrite: ", bg=self.theme["bg"], fg=self.theme["fg"]).pack(side=tk.LEFT, padx=(15, 5))
+        ttk.Combobox(row2, textvariable=self.overwrite_mode,
+                     values=["Ask", "Yes (Overwrite all)", "No (Skip existing)"],
+                     state="readonly", width=20).pack(side=tk.LEFT, padx=5)
+
+        btn_frame = tk.Frame(config_frame, bg=self.theme["bg"])
+        btn_frame.pack(fill=tk.X, pady=5)
+        tk.Button(btn_frame, text=T[self.lang]["generate_files"], bg=self.theme["success"], fg=self.theme["bg"],
+                  font=("Segoe UI", 10, "bold"), bd=0, padx=15, pady=6, command=self.generate_files_from_code).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="📋 Preview", bg=self.theme["info"], fg=self.theme["bg"],
+                  font=("Segoe UI", 10, "bold"), bd=0, padx=15, pady=6, command=self.preview_code_injector).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text=T[self.lang]["clear_all"], bg=self.theme["danger"], fg=self.theme["bg"],
+                  font=("Segoe UI", 10, "bold"), bd=0, padx=15, pady=6, command=self.clear_code_injector).pack(side=tk.LEFT, padx=5)
+
+        self.injector_help_text = scrolledtext.ScrolledText(f, bg=self.theme["input"], fg=self.theme["info"],
+                                                            font=("Consolas", 9), height=3, bd=0)
+        self.injector_help_text.pack(fill=tk.X, padx=12, pady=(0, 6))
+        self.injector_help_text.insert(tk.END, T[self.lang]["injector_help"])
+        self.injector_help_text.config(state="disabled")
+
+    def browse_injector_target(self):
+        d = filedialog.askdirectory()
+        if d:
+            self.target_dir_injector.set(d)
+
+    def on_detection_mode_change(self, event=None):
+        if self.detection_mode.get() == "Custom Regex":
+            self.custom_regex_entry.config(state="normal")
+        else:
+            self.custom_regex_entry.config(state="disabled")
+
+    def clear_code_injector(self):
+        self.txt_tree.delete("1.0", tk.END)
+        self.txt_code.delete("1.0", tk.END)
+
+    def parse_tree_structure(self, tree_text):
+        lines = tree_text.splitlines()
+        result = []
+        stack = []
+        for line in lines:
+            if not line.strip():
+                continue
+            cleaned = line
+            for p in PATTERNS_50:
+                cleaned = re.sub(p, "", cleaned)
+            cleaned = cleaned.strip()
+            if not cleaned:
+                continue
+            leading = len(line) - len(line.lstrip(" \t"))
+            depth = max(0, leading // 2)
+            name = cleaned.rstrip("/")
+            while len(stack) > depth:
+                stack.pop()
+            stack = stack[:depth]
+            stack.append(name)
+            full_path = "/".join(stack)
+            is_dir = cleaned.endswith("/") or "." not in name
+            result.append((full_path + ("/" if is_dir else ""), is_dir))
+        return result
+
+    def parse_code_blocks(self, code_text, mode):
+        """تشخیص بسیار قوی همه حالت‌ها + اعداد + کلمه دلخواه + your name is XXX :"""
+        lines = code_text.splitlines()
+        blocks = []
+        current_file = None
+        current_content = []
+
+        ALL_PATTERNS = [
+            # // 1.file.2 : path   یا   // file: path
+            (re.compile(r'^//\s*(?:[\d.\-]*\s*)?(?:file|FILE|mahan|MAHAN)\s*(?:[\d.\-]*)?\s*[:：]\s*(.+?)\s*$', re.I), 1),
+            # # file: path
+            (re.compile(r'^#\s*(?:[\d.\-]*\s*)?(?:file|FILE)\s*(?:[\d.\-]*)?\s*[:：]\s*(.+?)\s*$', re.I), 1),
+            # --- FILE: path ---
+            (re.compile(r'^---\s*(?:[\d.\-]*\s*)?(?:FILE|file)\s*(?:[\d.\-]*)?\s*[:：]\s*(.+?)\s*---\s*$', re.I), 1),
+            # file: path   یا  2.file.1: path
+            (re.compile(r'^(?:[\d.\-]*\s*)?(?:file|FILE|mahan|MAHAN)\s*(?:[\d.\-]*)?\s*[:：]\s*(.+?)\s*$', re.I), 1),
+            # your name is mahan : path   یا هر چیزی که به : ختم شود
+            (re.compile(r'^.*?[:：]\s*([a-zA-Z0-9_\-./\\]+(?:\.[a-zA-Z0-9]{1,12})?)\s*$'), 1),
+            # فقط مسیر تمیز
+            (re.compile(r'^([a-zA-Z0-9_\-./\\]+(?:\.[a-zA-Z0-9]{1,12}))\s*$'), 1),
+        ]
+
+        mode_map = {
+            "Comment: // file: ": [ALL_PATTERNS[0]],
+            "Comment: # file: ": [ALL_PATTERNS[1]],
+            "--- FILE: ---": [ALL_PATTERNS[2]],
+            "Path on its own line": [ALL_PATTERNS[5]],
+            "Custom Regex": [],
+            "Auto Detect": ALL_PATTERNS,
+        }
+
+        if mode == "Custom Regex":
+            try:
+                pat = re.compile(self.custom_regex_entry.get().strip(), re.I)
+                patterns = [(pat, 1)]
+            except Exception as e:
+                messagebox.showerror("Error", f"Invalid regex: {e}")
+                return []
+        else:
+            patterns = mode_map.get(mode, ALL_PATTERNS)
+
+        LANG_TAGS = {"css", "php", "js", "javascript", "html", "python", "py", "json", "xml", "txt", "md", "sql", "bash", "sh", "ts", "jsx", "tsx"}
+
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                if current_file is not None:
+                    current_content.append(line)
+                continue
+
+            matched = False
+            for pat, grp in patterns:
+                m = pat.match(stripped)
+                if m:
+                    if current_file is not None:
+                        content = "\n".join(current_content).strip()
+                        if content and content.lower() not in LANG_TAGS:
+                            blocks.append((current_file, content))
+                    path = m.group(grp).strip().strip("'\"")
+                    path = re.sub(r"[\\/]+", "/", path).lstrip("./")
+                    current_file = path
+                    current_content = []
+                    matched = True
+                    break
+
+            if not matched:
+                if stripped.lower() in LANG_TAGS and current_file is not None and not current_content:
+                    continue
+                if current_file is not None:
+                    current_content.append(line)
+
+        if current_file is not None:
+            content = "\n".join(current_content).strip()
+            if content and content.lower() not in LANG_TAGS:
+                blocks.append((current_file, content))
+        return blocks
+
+    def preview_code_injector(self):
+        target = self.target_dir_injector.get()
+        if not target:
+            messagebox.showerror("Error", "Target folder not selected.")
+            return
+        tree_text = self.txt_tree.get("1.0", tk.END).strip()
+        code_text = self.txt_code.get("1.0", tk.END).strip()
+        if not tree_text and not code_text:
+            messagebox.showerror("Error", "Nothing to preview.")
+            return
+
+        mode = self.injector_mode.get()
+        tree_items = self.parse_tree_structure(tree_text) if tree_text and mode != "Code Only" else []
+        code_blocks = self.parse_code_blocks(code_text, self.detection_mode.get()) if code_text and mode != "Tree Only" else []
+
+        files_to_create = []
+        for path, is_dir in tree_items:
+            if not is_dir:
+                files_to_create.append((path, ""))
+        for fp, content in code_blocks:
+            files_to_create = [f for f in files_to_create if f[0] != fp]
+            files_to_create.append((fp, content))
+
+        if not files_to_create:
+            messagebox.showinfo("Preview", "No files detected.")
+            return
+        self.preview_and_confirm(files_to_create, target)
+
+    def preview_and_confirm(self, parsed_files, target_dir):
+        approved = []
+        rejected = []
+        idx = [0]
+
+        win = tk.Toplevel(self.root)
+        win.title("Preview & Confirm")
+        win.geometry("900x650")
+        win.configure(bg=self.theme["bg"])
+
+        progress = tk.StringVar()
+        tk.Label(win, textvariable=progress, bg=self.theme["bg"], fg=self.theme["primary"], font=("Segoe UI", 10, "bold")).pack(pady=5)
+        path_var = tk.StringVar()
+        tk.Label(win, textvariable=path_var, bg=self.theme["bg"], fg=self.theme["fg"], font=("Consolas", 10, "bold")).pack(pady=3)
+
+        txt = scrolledtext.ScrolledText(win, bg=self.theme["input"], fg=self.theme["fg"], font=("Consolas", 9), height=28, bd=0, insertbackground=self.theme["fg"])
+        txt.pack(fill=tk.BOTH, expand=True, padx=12, pady=5)
+        add_context_menu(txt, self.lang)
+        enable_mouse_scroll(txt)
+
+        def update():
+            if idx[0] >= len(parsed_files):
+                return
+            fp, content = parsed_files[idx[0]]
+            progress.set(f"File {idx[0]+1} / {len(parsed_files)}")
+            path_var.set(fp)
+            txt.delete("1.0", tk.END)
+            txt.insert(tk.END, content if content else "(empty file)")
+
+        def approve():
+            if idx[0] < len(parsed_files):
+                content = txt.get("1.0", tk.END).rstrip("\n")
+                approved.append((parsed_files[idx[0]][0], content))
+                idx[0] += 1
+                if idx[0] < len(parsed_files):
+                    update()
+                else:
+                    finish()
+
+        def reject():
+            if idx[0] < len(parsed_files):
+                rejected.append(parsed_files[idx[0]][0])
+                idx[0] += 1
+                if idx[0] < len(parsed_files):
+                    update()
+                else:
+                    finish()
+
+        def finish():
+            created = skipped = 0
+            errors = []
+            ow = self.overwrite_mode.get()
+            for fp, content in approved:
+                full = os.path.join(target_dir, fp)
+                try:
+                    if os.path.exists(full):
+                        if ow == "No (Skip existing)":
+                            skipped += 1
+                            continue
+                        if ow == "Ask" and not messagebox.askyesno("Overwrite?", f"Overwrite?\n{fp}"):
+                            skipped += 1
+                            continue
+                    os.makedirs(os.path.dirname(full) or full, exist_ok=True)
+                    with open(full, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    created += 1
+                except Exception as e:
+                    errors.append(str(e))
+            msg = f"Created: {created}"
+            if skipped:
+                msg += f"\nSkipped: {skipped}"
+            if rejected:
+                msg += f"\nRejected: {len(rejected)}"
+            if errors:
+                msg += f"\nErrors: {len(errors)}"
+            messagebox.showinfo("Done", msg)
+            self.log(msg)
+            win.destroy()
+
+        bf = tk.Frame(win, bg=self.theme["bg"])
+        bf.pack(pady=10)
+        tk.Button(bf, text="✅ Approve", bg=self.theme["success"], fg=self.theme["bg"], font=("Segoe UI", 10, "bold"),
+                  bd=0, padx=15, pady=6, command=approve).pack(side=tk.LEFT, padx=5)
+        tk.Button(bf, text="❌ Reject", bg=self.theme["danger"], fg=self.theme["bg"], font=("Segoe UI", 10, "bold"),
+                  bd=0, padx=15, pady=6, command=reject).pack(side=tk.LEFT, padx=5)
+        tk.Button(bf, text="Cancel", bg=self.theme["warning"], fg=self.theme["bg"], font=("Segoe UI", 10, "bold"),
+                  bd=0, padx=15, pady=6, command=win.destroy).pack(side=tk.LEFT, padx=5)
+
+        update()
+        win.transient(self.root)
+        win.grab_set()
+        self.root.wait_window(win)
+
+    def generate_files_from_code(self):
+        self.preview_code_injector()
+
+    # ================= PROMPT =================
+    def init_prompt(self):
+        f = self.frames["prompt"]
+        self.txt_prompt = scrolledtext.ScrolledText(f, bg=self.theme["input"], fg=self.theme["fg"],
+                                                    font=("Consolas", 10), bd=0, insertbackground=self.theme["fg"])
+        self.txt_prompt.pack(fill=tk.BOTH, expand=True, padx=12, pady=6)
+        enable_mouse_scroll(self.txt_prompt)
+        add_context_menu(self.txt_prompt, self.lang)
+
+        prompts = {
+            "English": [
+                """You are generating a complete project for the AFAR Code Injector.
+
+STRICT RULES:
+1. First output the folder tree:
+project/
+├── file1.ext
+└── folder/
+    └── file2.ext
+
+2. Then every file must use exactly this separator:
+
+// file: relative/path/to/file.ext
+<complete content – no language tag after the separator>
+
+3. Never put css / php / js on its own line after // file:
+4. Full working code only.
+""",
+                """Generate a complete WordPress theme.
+Use tree + // file: path format only.
+No language tags after the separator line."""
+            ],
+            "فارسی": [
+                """یک پروژه کامل برای AFAR Code Injector تولید کن.
+
+قوانین اجباری:
+۱. اول درخت پوشه‌ها را بده
+۲. بعد هر فایل را دقیقاً با این جداکننده بنویس:
+
+// file: مسیر/نسبی/فایل.ext
+محتوای کامل فایل
+
+۳. هرگز بعد از // file: خط زبانی مثل css یا php نگذار.
+۴. کد کامل و قابل اجرا باشد.
+""",
+                """یک قالب کامل وردپرس بساز.
+فقط از درخت + // file: path استفاده کن."""
+            ]
+        }
+
+        lang_frame = tk.Frame(f, bg=self.theme["bg"])
+        lang_frame.pack(fill=tk.X, padx=12, pady=6)
+        tk.Label(lang_frame, text=T[self.lang]["prompt_lang"], bg=self.theme["bg"], fg=self.theme["fg"]).pack(side=tk.LEFT)
+        prompt_lang = tk.StringVar(value="English")
+        ttk.Combobox(lang_frame, textvariable=prompt_lang, values=["English", "فارسی"], state="readonly", width=10).pack(side=tk.LEFT, padx=5)
+
+        def load():
+            self.txt_prompt.delete("1.0", tk.END)
+            for p in prompts[prompt_lang.get()]:
+                self.txt_prompt.insert(tk.END, p + "\n\n" + "-" * 50 + "\n\n")
+        tk.Button(lang_frame, text=T[self.lang]["load_prompts"], bg=self.theme["info"], fg=self.theme["bg"], command=load).pack(side=tk.LEFT, padx=10)
+
+    # ================= HELP / EXPORT / SETTINGS (minimal working) =================
+    def init_help(self):
+        f = self.frames["help"]
+        txt = scrolledtext.ScrolledText(f, bg=self.theme["input"], fg=self.theme["fg"], font=("Consolas", 10), bd=0)
+        txt.pack(fill=tk.BOTH, expand=True, padx=12, pady=12)
+        txt.insert(tk.END, T[self.lang]["help_text"] + "\n\n" + T[self.lang]["help_tips"])
+        txt.config(state="disabled")
+        add_context_menu(txt, self.lang)
+
+    def init_export(self):
+        f = self.frames["export"]
+        p = tk.LabelFrame(f, text=T[self.lang]["export_title"], bg=self.theme["panel"], fg=self.theme["primary"],
+                          font=("Segoe UI", 10, "bold"), bd=1, relief=tk.SOLID)
+        p.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        tk.Label(p, text=T[self.lang]["save_as"], bg=self.theme["panel"], fg=self.theme["fg"]).pack(anchor=tk.W, padx=20, pady=10)
+        e = tk.Entry(p, textvariable=self.save_name, bg=self.theme["input"], fg=self.theme["fg"], font=("Consolas", 10), insertbackground=self.theme["fg"])
+        e.pack(fill=tk.X, padx=20, pady=5)
+        add_context_menu(e, self.lang)
+        tk.Button(p, text=T[self.lang]["save_btn"], bg=self.theme["success"], fg=self.theme["bg"],
+                  font=("Segoe UI", 10, "bold"), bd=0, padx=15, pady=6, command=self.save_output).pack(pady=10)
+
+    def save_output(self):
+        content = self.txt_out.get("1.0", tk.END).strip() if hasattr(self, "txt_out") else ""
+        if not content:
+            messagebox.showwarning("Warning", "No output.")
+            return
+        fname = self.save_name.get().strip() or "output.txt"
+        target = self.reverse_dir.get() or self.target_dir.get() or os.getcwd()
+        full = os.path.join(target, fname)
+        try:
+            with open(full, "w", encoding="utf-8") as f:
+                f.write(content)
+            messagebox.showinfo("Saved", full)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def init_settings(self):
+        f = self.frames["settings"]
+        left = tk.LabelFrame(f, text=T[self.lang]["settings_title"], bg=self.theme["panel"],
+                             fg=self.theme["primary"], font=("Segoe UI", 10, "bold"), bd=1, relief=tk.SOLID)
+        left.pack(side=tk.LEFT, fill=tk.Y, padx=20, pady=20, ipadx=15, ipady=15)
+        tk.Label(left, text=T[self.lang]["lang"], bg=self.theme["panel"], fg=self.theme["fg"]).pack(anchor=tk.W, padx=10, pady=5)
+        lc = ttk.Combobox(left, values=["English", "فارسی"], state="readonly")
+        lc.set("English" if self.lang == "en" else "فارسی")
+        lc.pack(fill=tk.X, padx=10, pady=5)
+        lc.bind("<<ComboboxSelected>>", lambda e: self.set_lang(lc.get()))
+        tk.Button(left, text=T[self.lang]["save_settings"], bg=self.theme["success"], fg="white",
+                  font=("Segoe UI", 10, "bold"), bd=0, padx=15, pady=6, command=self.save_config_and_notify).pack(pady=15)
+
+    def set_lang(self, val):
+        self.lang = "en" if val == "English" else "fa"
+        self.save_config()
+        self.refresh_ui()
+
+    def change_lang(self, e=None):
+        self.lang = "en" if self.lang_cb.get() == "English" else "fa"
+        self.save_config()
+        self.refresh_ui()
+
+    def update_status_lang(self):
+        if hasattr(self, "status_bar"):
+            self.status_bar.config(text=T[self.lang]["ready"])
+
+    def create_status_bar(self):
+        self.status_bar = tk.Label(self.root, text=T[self.lang]["ready"], bg=self.theme["panel"],
+                                   fg="#94a3b8", anchor=tk.W, font=("Segoe UI", 9), padx=10)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def create_log(self):
+        f = tk.LabelFrame(self.root, text="📋 Live Log", bg=self.theme["panel"], fg=self.theme["warning"],
+                          font=("Segoe UI", 9, "bold"), bd=1, relief=tk.SOLID)
+        f.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=(0, 6))
+        self.txt_log = scrolledtext.ScrolledText(f, bg="#020617", fg=self.theme["warning"],
+                                                 font=("Consolas", 9), height=4, bd=0, insertbackground=self.theme["fg"])
+        self.txt_log.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        enable_mouse_scroll(self.txt_log)
+        add_context_menu(self.txt_log, self.lang)
+
+    def log(self, msg):
+        ts = datetime.now().strftime("%H:%M:%S")
+        self.txt_log.insert(tk.END, f"[{ts}] {msg}\n")
+        self.txt_log.see(tk.END)
+
+    def copy_to_clip(self, widget):
+        self.root.clipboard_clear()
+        self.root.clipboard_append(widget.get("1.0", tk.END).strip())
+        self.log("Copied to clipboard")
+
+    def save_config_and_notify(self):
+        self.save_config()
+        messagebox.showinfo("Saved", "Settings saved.")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = AFAR(root)
+    root.mainloop()
